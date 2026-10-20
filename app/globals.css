@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* Thmanyah (ثمانية) Typography Family - High Quality Arabic Web Fonts */
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyah/thmanyah-sans-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyah/thmanyah-sans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyah/thmanyah-sans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyah/thmanyah-sans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Sans";
+  src: url("/fonts/thmanyah/thmanyah-sans-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Serif Display";
+  src: url("/fonts/thmanyah/thmanyah-serif-display-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Serif Display";
+  src: url("/fonts/thmanyah/thmanyah-serif-display-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Serif Display";
+  src: url("/fonts/thmanyah/thmanyah-serif-display-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thmanyah Serif Display";
+  src: url("/fonts/thmanyah/thmanyah-serif-display-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Thmanyah Sans", var(--font-cairo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Thmanyah Serif Display", "Thmanyah Sans", var(--font-cairo), sans-serif;
+  --font-mono: var(--font-space), ui-monospace, monospace;
+}
+
+@layer base {
+  :root {
+    --bg-main: #08090d;
+    --bg-surface: #10121a;
+    --bg-surface-elevated: #161924;
+    --bg-glass: rgba(16, 18, 26, 0.75);
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --border-glass-hover: rgba(245, 158, 11, 0.4);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-gold: #f59e0b;
+    --accent-gold-hover: #d97706;
+    --accent-glow: rgba(245, 158, 11, 0.25);
+  }
+
+  html.light {
+    --bg-main: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #f1f5f9;
+    --bg-glass: rgba(255, 255, 255, 0.85);
+    --border-glass: rgba(15, 23, 42, 0.09);
+    --border-glass-hover: rgba(245, 158, 11, 0.6);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --accent-gold: #d97706;
+    --accent-gold-hover: #b45309;
+    --accent-glow: rgba(217, 119, 6, 0.15);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Glassmorphic Components */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+}
+
+.glass-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-glass-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px var(--accent-glow);
+}
+
+/* Cinematic Gold Gradient */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-silver {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Ambient Radial Glows */
+.ambient-glow-amber {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0) 70%);
+}
+
+.ambient-glow-blue {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 70%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-glass);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold);
+}
+
+/* Infinite Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 35s linear infinite;
+}
+
+.animate-marquee-ltr:hover,
+.animate-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-marquee-ltr,
+  .animate-marquee-rtl {
+    animation: none !important;
+  }
+}
