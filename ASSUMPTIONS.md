@@ -35,7 +35,9 @@ This document records all decisions and assumptions made during the design, deve
 ---
 
 ## 3. Profile & Content Customization
-- **Persona**: Defaulted to **Abdelmagid Owais (عبدالمجيد عويس)**, Senior Video Editor & Commercial Director, based on the provided reference site (`masymas99.github.io/AbdoOwais/`) and portfolio Drive folder.
+- **Persona**: **Abdelmgeed Owais (عبدالمجيد عويس)**, Video Editor & Motion Designer. Name spelling, email, education, tools and skills come from his CV; WhatsApp, Instagram and TikTok from the previous live site (`masymas99.github.io/AbdoOwais/`).
+- **No fabricated content**: the earlier invented experience timeline, "Curated" stock-image projects (Nike, Porsche…), placeholder durations, placeholder email/YouTube/Behance links and the "Senior / Commercial Director" title were removed. Stats on the page (project count, disciplines, formats) are computed from the live library. The "Names that appear in the work" strip lists only brands whose names occur in real video titles (`lib/portfolio.ts`).
+- **Tools**: only software confirmed by the CV is shown (After Effects, Photoshop, Adobe XD, Canva). Add ids such as `pr` or `dv` in `site.config.ts` if they are really used.
 - **Single Source of Truth**: All text, bio, social links, contact info, and tools are centralized in:
   - `content/site.config.ts` (profile details, tools, social URLs, WhatsApp number)
   - `content/ar.ts` (Arabic localization dictionary)
@@ -50,7 +52,7 @@ This document records all decisions and assumptions made during the design, deve
 
 ## 4. UI/UX, Aesthetics & Internationalization
 - **Bilingual & RTL-First**: Egyptian Arabic is the primary default language with standard `dir="rtl"`. English toggle is available in the header and persists across visits via `portfolio_lang` in `localStorage` and `NEXT_LOCALE` cookie.
-- **Cinematic Aesthetic**: Dark mode by default (`#08090d` obsidian slate) with custom warm cinematic gold accent (`#f59e0b`), glassmorphism with backdrop filters, subtle radial ambient glows, and custom scrollbar.
+- **Cinematic Aesthetic**: Dark-only ink-black interface (`#070707`), bone-white type, single REC-red accent (`#ff4b2b`), film grain, timecode/viewfinder motifs; no glassmorphism or gradient decoration.
 - **Accessibility & Motion**: All CSS animations respect `@media (prefers-reduced-motion: reduce)`.
 - **Performance / Facade Playback**:
   - Video cards are click-to-load facades with optimized thumbnails and duration badges. Zero video iframes are loaded on page load.

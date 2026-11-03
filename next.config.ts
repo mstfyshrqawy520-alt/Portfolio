@@ -4,9 +4,10 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval';
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com https://img.youtube.com https://i.vimeocdn.com https://images.unsplash.com;
+  img-src 'self' data: blob: https://*.googleusercontent.com https://drive.google.com https://img.youtube.com https://i.vimeocdn.com;
   font-src 'self' data: https://fonts.gstatic.com;
   frame-src 'self' https://drive.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com;
+  media-src 'self' blob: https:;
   connect-src 'self' https://www.googleapis.com https://drive.google.com;
   object-src 'none';
   base-uri 'self';
@@ -24,7 +25,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "img.youtube.com" },
       { protocol: "https", hostname: "i.vimeocdn.com" },
-      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   async headers() {

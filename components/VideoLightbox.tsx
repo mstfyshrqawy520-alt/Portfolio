@@ -1,233 +1,212 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { DriveVideoItem } from "@/types/drive";
-import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Share2,
-  Check,
-  ExternalLink,
-  Clock,
-  Sparkles,
-} from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, Check, Link2, X } from "lucide-react";
+import type { DriveVideoItem } from "@/types/drive";
 import { useLanguage } from "@/context/LanguageContext";
+import { categoryBlurb, categoryLabel, driveViewUrl, embedUrlFor, hasRealDuration, pad } from "@/lib/portfolio";
+import DriveEmbed from "./DriveEmbed";
 
 interface VideoLightboxProps {
   video: DriveVideoItem | null;
-  allVideos: DriveVideoItem[];
+  list: DriveVideoItem[];
   onClose: () => void;
   onNavigate: (video: DriveVideoItem) => void;
 }
 
-export default function VideoLightbox({
-  video,
-  allVideos,
-  onClose,
-  onNavigate,
-}: VideoLightboxProps) {
-  const { lang, dir, t } = useLanguage();
+export default function VideoLightbox({ video, list, onClose, onNavigate }: VideoLightboxProps) {
+  const { t, dir } = useLanguage();
   const [copied, setCopied] = useState(false);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
 
-  // Sync current index for Prev / Next
-  const currentIndex = video
-    ? allVideos.findIndex((v) => v.id === video.id)
-    : -1;
+  const idx = video ? list.findIndex((v) => v.id === video.id) : -1;
+  const prev = idx > 0 ? list[idx - 1] : null;
+  const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
 
-  const handlePrev = useCallback(() => {
-    if (currentIndex > 0) {
-      setIframeLoaded(false);
-      onNavigate(allVideos[currentIndex - 1]);
-    }
-  }, [currentIndex, allVideos, onNavigate]);
+  const goPrev = useCallback(() => prev && onNavigate(prev), [prev, onNavigate]);
+  const goNext = useCallback(() => next && onNavigate(next), [next, onNavigate]);
 
-  const handleNext = useCallback(() => {
-    if (currentIndex < allVideos.length - 1) {
-      setIframeLoaded(false);
-      onNavigate(allVideos[currentIndex + 1]);
-    }
-  }, [currentIndex, allVideos, onNavigate]);
+  const isOpen = Boolean(video);
 
-  // Keyboard navigation
+  // Focus management + scroll lock
   useEffect(() => {
-    if (!video) return;
+    if (!isOpen) return;
+    returnFocus.current = document.activeElement as HTMLElement;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => dialogRef.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus());
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      returnFocus.current?.focus?.();
+    };
+  }, [isOpen]);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      } else if (e.key === "ArrowLeft") {
-        if (dir === "rtl") handleNext();
-        else handlePrev();
-      } else if (e.key === "ArrowRight") {
-        if (dir === "rtl") handlePrev();
-        else handleNext();
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      // Arrow keys follow reading direction
+      if (e.key === "ArrowRight") (dir === "rtl" ? goPrev : goNext)();
+      if (e.key === "ArrowLeft") (dir === "rtl" ? goNext : goPrev)();
+      if (e.key === "Tab" && dialogRef.current) {
+        const f = dialogRef.current.querySelectorAll<HTMLElement>("button, a[href], iframe");
+        if (!f.length) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, dir, goNext, goPrev, onClose]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    // Prevent background scrolling
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
-    };
-  }, [video, dir, handleNext, handlePrev, onClose]);
-
-  if (!video) return null;
-
-  // Determine embed source
-  let embedUrl = video.previewUrl;
-  let isExternal = false;
-
-  if (video.youtubeFallbackUrl) {
-    embedUrl = `${video.youtubeFallbackUrl}?autoplay=1&rel=0`;
-    isExternal = true;
-  } else if (video.vimeoFallbackUrl) {
-    embedUrl = `${video.vimeoFallbackUrl}?autoplay=1`;
-    isExternal = true;
-  } else if (video.id.startsWith("mock-")) {
-    embedUrl = "https://www.youtube.com/embed/aqz-KE-bpKQ?autoplay=1&rel=0";
-    isExternal = true;
-  } else if (embedUrl.includes("drive.google.com")) {
-    embedUrl = `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=1`;
-  }
-
-  const handleCopyShare = () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?v=${video.id}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
+  const share = async () => {
+    if (!video) return;
+    const url = `${window.location.origin}${window.location.pathname}?v=${video.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* clipboard unavailable */
+    }
   };
 
-  const isVertical = video.orientation === "vertical";
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-2xl p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      {/* Lightbox Container */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`relative w-full flex flex-col glass-panel rounded-2xl overflow-hidden border border-white/10 shadow-2xl ${
-          isVertical ? "max-w-lg max-h-[95vh]" : "max-w-5xl max-h-[95vh]"
-        }`}
-      >
-        {/* Top Action Bar */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {video.category}
-            </span>
-            <div className="flex items-center gap-1 text-xs text-slate-400">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>{video.formattedDuration}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Share Link Button */}
-            <button
-              onClick={handleCopyShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
-              title={t.work.lightbox.share}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400">{t.work.lightbox.shareCopied}</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{t.work.lightbox.share}</span>
-                </>
-              )}
-            </button>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-colors"
-              title={t.work.lightbox.close}
-              aria-label="Close dialog"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Video Player Frame Area */}
-        <div
-          className={`relative w-full bg-black flex items-center justify-center ${
-            isVertical ? "aspect-[9/16] max-h-[70vh]" : "aspect-[16/9] max-h-[68vh]"
-          }`}
+    <AnimatePresence>
+      {video && (
+        <motion.div
+          key="lightbox"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35 }}
+          className="fixed inset-0 z-[70] bg-ink/95 backdrop-blur-sm"
+          onClick={onClose}
         >
-          {/* Skeleton Spinner while iframe loads */}
-          {!iframeLoaded && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 z-10">
-              <div className="w-10 h-10 border-4 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
-              <span className="text-xs text-slate-400">
-                {isExternal ? t.work.lightbox.externalFallback : t.work.lightbox.drivePreview}
-              </span>
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lightbox-title"
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-full flex-col"
+          >
+            {/* Top bar */}
+            <div className="container-x flex h-16 shrink-0 items-center justify-between gap-4 md:h-20">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-smoke" dir="ltr">
+                {pad(idx + 1, 3)} <span className="text-line">/</span> {pad(list.length, 3)}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={share}
+                  className="inline-flex h-10 items-center gap-2 rounded-full border border-line px-4 text-xs text-ash transition-colors hover:border-bone/40 hover:text-bone"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-rec" aria-hidden="true" /> : <Link2 className="h-3.5 w-3.5" aria-hidden="true" />}
+                  <span aria-live="polite">{copied ? t.work.lightbox.copied : t.work.lightbox.share}</span>
+                </button>
+                <button
+                  type="button"
+                  data-autofocus
+                  onClick={onClose}
+                  aria-label={t.work.lightbox.close}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-bone text-ink transition-colors hover:bg-rec"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
             </div>
-          )}
 
-          <iframe
-            src={embedUrl}
-            title={video.title}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            onLoad={() => setIframeLoaded(true)}
-          />
+            {/* Stage + details */}
+            <div className="container-x grid min-h-0 flex-1 grid-cols-1 content-start gap-6 overflow-y-auto pb-6 lg:content-stretch lg:grid-cols-12 lg:gap-10 lg:overflow-hidden">
+              <div className="flex min-w-0 items-center justify-center lg:col-span-8 lg:min-h-0 xl:col-span-9">
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className={`relative bg-char ${
+                    video.orientation === "vertical" ? "mx-auto aspect-[9/16]" : "aspect-video w-full"
+                  }`}
+                  style={
+                    video.orientation === "vertical"
+                      ? { width: "min(calc(100vw - 2rem), calc((100svh - 9rem) * 9 / 16), 506px)" }
+                      : { maxWidth: "calc((100svh - 9rem) * 16 / 9)" }
+                  }
+                >
+                  <DriveEmbed
+                    src={embedUrlFor(video)}
+                    title={video.title}
+                    externalUrl={driveViewUrl(video)}
+                    loadingLabel={t.work.lightbox.loading}
+                    slowLabel={t.work.lightbox.error}
+                    externalLabel={t.work.lightbox.openDrive}
+                  />
+                </motion.div>
+              </div>
 
-          {/* Navigation Arrows */}
-          {currentIndex > 0 && (
-            <button
-              onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/70 hover:bg-amber-500 text-white hover:text-black border border-white/10 transition-all z-20 shadow-lg shadow-black/40"
-              title={t.work.lightbox.prev}
-              aria-label="Previous video"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
+              <aside className="flex min-w-0 flex-col justify-between gap-8 lg:col-span-4 lg:py-6 xl:col-span-3">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-rec">{categoryLabel(video.categorySlug, video.category, t.categories)}</p>
+                  <h2 id="lightbox-title" className="mt-3 font-display text-3xl leading-tight text-bone md:text-4xl">
+                    {video.title}
+                  </h2>
+                  <p className="mt-4 text-sm leading-relaxed text-ash">{video.description || categoryBlurb(video.categorySlug, t.categories)}</p>
 
-          {currentIndex < allVideos.length - 1 && (
-            <button
-              onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/70 hover:bg-amber-500 text-white hover:text-black border border-white/10 transition-all z-20 shadow-lg shadow-black/40"
-              title={t.work.lightbox.next}
-              aria-label="Next video"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+                  <dl className="mt-8 divide-y divide-line border-y border-line text-sm">
+                    <div className="flex justify-between gap-4 py-3">
+                      <dt className="text-smoke">{t.work.lightbox.format}</dt>
+                      <dd className="text-bone">{video.orientation === "vertical" ? t.work.vertical : t.work.horizontal}</dd>
+                    </div>
+                    {hasRealDuration(video) && (
+                      <div className="flex justify-between gap-4 py-3">
+                        <dt className="text-smoke">{t.work.lightbox.duration}</dt>
+                        <dd className="font-mono text-bone" dir="ltr">{video.formattedDuration}</dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4 py-3">
+                      <dt className="text-smoke">{t.work.lightbox.index}</dt>
+                      <dd className="font-mono text-bone" dir="ltr">
+                        {pad(idx + 1, 3)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
 
-        {/* Caption & Metadata Footer */}
-        <div className="p-4 sm:p-6 bg-[#0c0e15] border-t border-white/10 flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-4">
-            <h2 className="text-base sm:text-lg font-bold text-white leading-snug">
-              {video.title}
-            </h2>
-            <span dir="ltr" className="text-xs text-slate-500 whitespace-nowrap font-mono">
-              {currentIndex + 1} / {allVideos.length}
-            </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    disabled={!prev}
+                    className="flex h-12 items-center justify-center gap-2 rounded-full border border-line text-sm text-bone transition-colors hover:border-bone disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ArrowLeft className="h-4 w-4 rtl:-scale-x-100" aria-hidden="true" />
+                    {t.work.lightbox.prev}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    disabled={!next}
+                    className="flex h-12 items-center justify-center gap-2 rounded-full border border-line text-sm text-bone transition-colors hover:border-bone disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    {t.work.lightbox.next}
+                    <ArrowRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden="true" />
+                  </button>
+                </div>
+              </aside>
+            </div>
           </div>
-
-          {video.description && (
-            <p className="text-xs sm:text-sm text-slate-300/90 leading-relaxed max-h-24 overflow-y-auto pr-1">
-              {video.description}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

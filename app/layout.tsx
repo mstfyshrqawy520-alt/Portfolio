@@ -1,31 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Cairo, Space_Grotesk } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
-import { ThemeProvider } from "@/context/ThemeContext";
 import { siteConfig } from "@/content/site.config";
 
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  variable: "--font-cairo",
-  weight: ["400", "500", "600", "700", "800", "900"],
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
+const grotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-space",
+  variable: "--font-grotesk",
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://abdo-owais.com";
+const serif = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono-face",
+  display: "swap",
+});
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+const title = `${siteConfig.nameEn} — ${siteConfig.roleEn}`;
+const description = `${siteConfig.taglineEn} ${siteConfig.taglineAr}`;
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#08090d" },
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-  ],
+  themeColor: "#070707",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
@@ -33,56 +40,43 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${siteConfig.name} | ${siteConfig.roleAr}`,
-    template: `%s | ${siteConfig.name}`,
+    default: `${siteConfig.name} | ${title}`,
+    template: `%s | ${siteConfig.nameEn}`,
   },
-  description: siteConfig.taglineAr,
+  description,
   keywords: [
-    "عبدالمجيد عويس",
-    "Abdelmagid Owais",
-    "مونتير فيديو",
-    "مخرج إعلاني",
+    siteConfig.name,
+    siteConfig.nameEn,
     "Video Editor",
-    "Commercial Director",
+    "Motion Designer",
+    "مونتير فيديو",
+    "موشن جرافيك",
+    "Real Estate Video Editing",
+    "مونتاج فيديوهات عقارية",
     "Reels Editor",
-    "Real Estate Video",
-    "DaVinci Resolve",
-    "Premiere Pro",
+    "Promo Editing",
+    "Google Earth Animation",
     "After Effects",
-    "Color Grading",
-    "Cairo Video Production",
+    "Egypt",
   ],
-  authors: [{ name: siteConfig.name, url: siteUrl }],
-  creator: siteConfig.name,
+  authors: [{ name: siteConfig.nameEn, url: siteUrl }],
+  creator: siteConfig.nameEn,
   openGraph: {
     type: "website",
     locale: "ar_EG",
     alternateLocale: ["en_US"],
     url: siteUrl,
-    title: `${siteConfig.name} | ${siteConfig.roleAr}`,
-    description: siteConfig.taglineAr,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: "/og-image.svg",
-        width: 1200,
-        height: 630,
-        alt: `${siteConfig.name} - ${siteConfig.roleAr}`,
-      },
-    ],
+    title,
+    description: siteConfig.taglineEn,
+    siteName: siteConfig.nameEn,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | ${siteConfig.roleAr}`,
-    description: siteConfig.taglineAr,
-    images: ["/og-image.svg"],
+    title,
+    description: siteConfig.taglineEn,
   },
   alternates: {
-    canonical: siteUrl,
-    languages: {
-      "ar-EG": siteUrl,
-      "en-US": `${siteUrl}?lang=en`,
-    },
+    canonical: "/",
   },
   robots: {
     index: true,
@@ -97,67 +91,36 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const jsonLdPerson = {
     "@context": "https://schema.org",
     "@type": "Person",
-    name: siteConfig.name,
-    alternateName: siteConfig.nameEn,
+    name: siteConfig.nameEn,
+    alternateName: siteConfig.name,
     jobTitle: siteConfig.roleEn,
     description: siteConfig.taglineEn,
     url: siteUrl,
-    email: siteConfig.email,
-    telephone: siteConfig.phone,
-    sameAs: [
-      siteConfig.socials.instagram,
-      siteConfig.socials.youtube,
-      siteConfig.socials.behance,
-      siteConfig.socials.linkedin,
-    ].filter(Boolean),
+    image: `${siteUrl}/profile.jpg`,
+    email: `mailto:${siteConfig.email}`,
+    address: { "@type": "PostalAddress", addressLocality: "Menouf", addressRegion: "Minufia", addressCountry: "EG" },
+    alumniOf: { "@type": "CollegeOrUniversity", name: "Menoufia University" },
+    sameAs: Object.values(siteConfig.socials).filter(Boolean),
   };
 
   return (
     <html
       lang="ar"
       dir="rtl"
-      className={`${cairo.variable} ${spaceGrotesk.variable} dark`}
+      className={`${grotesk.variable} ${serif.variable} ${mono.variable} scroll-smooth scroll-pt-20 motion-reduce:scroll-auto`}
       suppressHydrationWarning
     >
       <head>
-        <link
-          rel="preload"
-          href="/fonts/thmanyah/thmanyah-sans-Regular.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/thmanyah/thmanyah-sans-Bold.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/thmanyah/thmanyah-serif-display-Bold.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPerson) }}
-        />
+        <link rel="preload" href="/fonts/thmanyah/thmanyah-sans-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/thmanyah/thmanyah-serif-display-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPerson) }} />
       </head>
-      <body className="font-sans antialiased selection:bg-amber-500/20 selection:text-amber-300">
-        <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
-        </ThemeProvider>
+      <body className="grain antialiased">
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

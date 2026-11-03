@@ -1,3 +1,13 @@
+/**
+ * Single source of truth for personal details.
+ *
+ * Every value here is verified against the CV (MyCv.pdf) or the previous
+ * live portfolio (masymas99.github.io/AbdoOwais). Do not add clients, awards,
+ * stats or tools that are not confirmed — the site renders whatever is listed.
+ */
+
+export type ToolId = "ae" | "ps" | "xd" | "canva" | "pr" | "dv" | "au" | "c4d" | "blender";
+
 export interface SiteConfig {
   name: string;
   nameEn: string;
@@ -5,64 +15,79 @@ export interface SiteConfig {
   roleEn: string;
   taglineAr: string;
   taglineEn: string;
+  locationAr: string;
+  locationEn: string;
   email: string;
   phone: string;
-  whatsappNumber: string; // e.g. "201505627204" (no + or spaces)
+  whatsappNumber: string; // international format, digits only
   whatsappPrefilledAr: string;
   whatsappPrefilledEn: string;
   socials: {
     instagram?: string;
-    youtube?: string;
-    behance?: string;
-    linkedin?: string;
     tiktok?: string;
+    linkedin?: string;
+    behance?: string;
     vimeo?: string;
+    youtube?: string;
   };
+  /**
+   * SHOWREEL
+   * - `src`: a direct, streamable video file (e.g. "/showreel.mp4" placed in /public,
+   *   or a CDN/Cloudinary/Bunny URL). Enables the custom cinematic player.
+   * - `driveFileId`: alternatively, a Google Drive file id (Drive's own player is used).
+   * - `poster`: optional still frame for the player.
+   * When both are null the site shows a featured project in the showreel slot and
+   * labels it "Featured cut — full showreel coming soon".
+   */
+  showreel: {
+    src: string | null;
+    driveFileId: string | null;
+    poster: string | null;
+  };
+  /** Software confirmed by the CV. Add more ids (pr, dv, au…) only if they are really used. */
+  tools: ToolId[];
   features: {
-    courses: boolean; // default OFF
-    testimonials: boolean; // default OFF
-    stats: boolean; // default OFF
+    courses: boolean;
+    testimonials: boolean;
+    stats: boolean;
   };
-  tools: {
-    name: string;
-    icon?: string;
-    category: "editing" | "motion" | "color" | "audio" | "3d";
-  }[];
 }
 
 export const siteConfig: SiteConfig = {
   name: "عبدالمجيد عويس",
-  nameEn: "Abdelmagid Owais",
-  roleAr: "مونتير فيديو محترف ومخرج إعلاني",
-  roleEn: "Senior Video Editor & Commercial Director",
-  taglineAr: "صناعة محتوى بصري عالي التأثير يخطف الأنظار ويحقق نتائج استثنائية للعلامات التجارية وصناع المحتوى.",
-  taglineEn: "Crafting high-impact visual stories that captivate audiences and drive measurable results for brands and creators.",
-  email: "contact@abdo-owais.com",
+  nameEn: "Abdelmgeed Owais",
+  roleAr: "مونتير فيديو ومصمم موشن جرافيك",
+  roleEn: "Video Editor & Motion Designer",
+  taglineAr:
+    "مونتاج ريلز وبروموهات وأفلام عقارية وموشن جرافيك — بإيقاع محسوب وتفاصيل بصرية مصنوعة بعناية.",
+  taglineEn:
+    "Editing reels, promos, real-estate films and motion graphics — with deliberate pacing and carefully crafted visual detail.",
+  locationAr: "منوف، المنوفية — مصر",
+  locationEn: "Menouf, Minufia — Egypt",
+  email: "abdoowaiss138@gmail.com",
   phone: "+201505627204",
   whatsappNumber: "201505627204",
-  whatsappPrefilledAr: "مرحباً عبدالمجيد، شاهدت معرض أعمالك وأريد الاستفسار عن مشروع مونتاج جديد.",
-  whatsappPrefilledEn: "Hi Abdelmagid, I saw your portfolio and would like to discuss a video project.",
+  whatsappPrefilledAr: "أهلاً عبدالمجيد، شفت معرض أعمالك وحابب أتكلم معاك عن مشروع فيديو.",
+  whatsappPrefilledEn: "Hi Abdelmgeed, I saw your portfolio and would like to talk about a video project.",
   socials: {
-    instagram: "https://instagram.com/abdo_owais",
-    youtube: "https://youtube.com/@abdo_owais",
-    behance: "https://behance.net/abdo_owais",
-    linkedin: "https://linkedin.com/in/abdo-owais",
+    instagram: "https://www.instagram.com/geedoo19/",
+    tiktok: "https://www.tiktok.com/@geedoo26",
+    linkedin: "https://www.linkedin.com/in/abdelmgeed-owais-b03a73336",
   },
+  showreel: {
+    src: null,
+    driveFileId: null,
+    poster: null,
+  },
+  tools: ["ae", "ps", "xd", "canva"],
   features: {
     courses: false,
     testimonials: false,
     stats: false,
   },
-  tools: [
-    { name: "Adobe Premiere Pro", category: "editing" },
-    { name: "After Effects", category: "motion" },
-    { name: "DaVinci Resolve Studio", category: "color" },
-    { name: "Adobe Audition", category: "audio" },
-    { name: "Blender 3D", category: "3d" },
-    { name: "Cinema 4D", category: "3d" },
-    { name: "Adobe Photoshop", category: "editing" },
-    { name: "Color Grading (ACES / Film Emulation)", category: "color" },
-    { name: "Sound Design & Foley", category: "audio" },
-    { name: "Kinetic Typography", category: "motion" },
-  ],
 };
+
+export const whatsappLink = (lang: "ar" | "en") =>
+  `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(
+    lang === "ar" ? siteConfig.whatsappPrefilledAr : siteConfig.whatsappPrefilledEn
+  )}`;

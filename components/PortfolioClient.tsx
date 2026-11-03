@@ -1,99 +1,102 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { DriveCMSData, DriveVideoItem } from "@/types/drive";
+import type { DriveCMSData, DriveVideoItem } from "@/types/drive";
+import { brandsInWork } from "@/lib/portfolio";
 import Header from "./Header";
 import Hero from "./Hero";
-import About from "./About";
-import Experience from "./Experience";
+import Showreel from "./Showreel";
 import WorkSection from "./WorkSection";
 import Services from "./Services";
+import About from "./About";
+import Toolkit from "./Toolkit";
+import Experience from "./Experience";
 import Contact from "./Contact";
 import Footer from "./Footer";
 import VideoLightbox from "./VideoLightbox";
 
-interface PortfolioClientProps {
-  initialData: DriveCMSData;
-}
-
-export default function PortfolioClient({ initialData }: PortfolioClientProps) {
+export default function PortfolioClient({ initialData }: { initialData: DriveCMSData }) {
   const searchParams = useSearchParams();
-  const [selectedVideo, setSelectedVideo] = useState<DriveVideoItem | null>(null);
+  const { videos, categories, featuredVideos, profileImage } = initialData;
 
-  // Deep linking: If ?v=VIDEO_ID is present, open lightbox directly
-  useEffect(() => {
-    const videoId = searchParams.get("v");
-    if (videoId) {
-      const match = initialData.videos.find((v) => v.id === videoId);
-      if (match) {
-        setSelectedVideo(match);
-      }
-    }
-  }, [searchParams, initialData.videos]);
+  // Deep link: ?v=VIDEO_ID opens the lightbox on load
+  const [selected, setSelected] = useState<DriveVideoItem | null>(() => {
+    const id = searchParams.get("v");
+    return id ? videos.find((v) => v.id === id) ?? null : null;
+  });
+  const [navList, setNavList] = useState<DriveVideoItem[]>(videos);
+  const [reelSignal, setReelSignal] = useState(0);
+  const [workFilterKey, setWorkFilterKey] = useState(0);
+  const [workFilter, setWorkFilter] = useState<string | null>(null);
 
-  const handleSelectVideo = (video: DriveVideoItem) => {
-    setSelectedVideo(video);
+  const featured = featuredVideos.length ? featuredVideos : videos.slice(0, 8);
+  const brands = useMemo(() => brandsInWork(videos), [videos]);
+  const formats = useMemo(() => {
+    const f: string[] = [];
+    if (videos.some((v) => v.orientation === "horizontal")) f.push("16:9");
+    if (videos.some((v) => v.orientation === "vertical")) f.push("9:16");
+    return f;
+  }, [videos]);
+  const activeCategories = useMemo(() => categories.filter((c) => videos.some((v) => v.categorySlug === c.slug)).length, [categories, videos]);
+
+  const setUrl = (id: string | null) => {
     const params = new URLSearchParams(window.location.search);
-    params.set("v", video.id);
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", newUrl);
+    if (id) params.set("v", id);
+    else params.delete("v");
+    const q = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`);
   };
 
-  const handleCloseLightbox = () => {
-    setSelectedVideo(null);
-    const params = new URLSearchParams(window.location.search);
-    params.delete("v");
-    const query = params.toString() ? `?${params.toString()}` : "";
-    const newUrl = `${window.location.pathname}${query}`;
-    window.history.replaceState(null, "", newUrl);
+  const open = useCallback((video: DriveVideoItem, list: DriveVideoItem[] = videos) => {
+    setNavList(list);
+    setSelected(video);
+    setUrl(video.id);
+  }, [videos]);
+
+  const close = useCallback(() => {
+    setSelected(null);
+    setUrl(null);
+  }, []);
+
+  const watchReel = () => {
+    document.getElementById("showreel")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    setReelSignal((n) => n + 1);
+  };
+
+  const filterWork = (slug: string) => {
+    setWorkFilter(slug);
+    setWorkFilterKey((k) => k + 1);
+    document.getElementById("work")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-[#08090d] text-slate-100 selection:bg-amber-500/20 selection:text-amber-300">
-      {/* Sticky Header with ScrollSpy */}
+    <div className="relative flex min-h-screen flex-col">
       <Header />
-
-      {/* Main Content Sections */}
-      <main className="flex-grow">
-        {/* 1. Hero Section + Featured Showreel Strip */}
+      <main id="main" className="flex-1">
         <Hero
-          featuredVideos={initialData.featuredVideos}
-          profileImage={initialData.profileImage}
-          cvUrl={initialData.cvUrl}
-          onSelectVideo={handleSelectVideo}
+          featured={featured}
+          totalProjects={videos.length}
+          totalCategories={activeCategories}
+          formats={formats}
+          onWatchReel={watchReel}
         />
-
-        {/* 2. About + Skills Marquee */}
-        <About />
-
-        {/* 3. Experience Timeline (CV-Style) */}
-        <Experience />
-
-        {/* 4. Work Section (Category chips, Bento/Masonry Grid, Click-to-load Facade) */}
+        <Showreel featured={featured} playSignal={reelSignal} />
         <WorkSection
-          categories={initialData.categories}
-          videos={initialData.videos}
-          onSelectVideo={handleSelectVideo}
+          key={workFilterKey}
+          initialFilter={workFilter ?? "all"}
+          categories={categories}
+          videos={videos}
+          onSelect={open}
         />
-
-        {/* 5. Services Section */}
-        <Services />
-
-        {/* 6. Contact Section */}
+        <Services videos={videos} onFilter={filterWork} />
+        <About profileImage={profileImage} />
+        <Toolkit />
+        <Experience totalProjects={videos.length} brands={brands} />
         <Contact />
       </main>
-
-      {/* Footer */}
       <Footer />
-
-      {/* Fullscreen Video Lightbox Modal */}
-      <VideoLightbox
-        video={selectedVideo}
-        allVideos={initialData.videos}
-        onClose={handleCloseLightbox}
-        onNavigate={handleSelectVideo}
-      />
+      <VideoLightbox video={selected} list={navList} onClose={close} onNavigate={(v) => open(v, navList)} />
     </div>
   );
 }

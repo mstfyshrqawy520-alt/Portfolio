@@ -23,8 +23,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check saved preference or document cookie
-    const saved = localStorage.getItem("portfolio_lang") as Language | null;
+    const fromQuery = new URLSearchParams(window.location.search).get("lang");
+    let saved: Language | null = null;
+    try {
+      saved = localStorage.getItem("portfolio_lang") as Language | null;
+    } catch {
+      /* storage blocked */
+    }
+    if (fromQuery === "en" || fromQuery === "ar") saved = fromQuery;
     if (saved === "en" || saved === "ar") {
+      // Reading browser-only storage after hydration is intentional here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLang(saved);
       document.documentElement.lang = saved;
       document.documentElement.dir = saved === "ar" ? "rtl" : "ltr";
@@ -37,7 +46,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetLanguage = (newLang: Language) => {
     setLang(newLang);
-    localStorage.setItem("portfolio_lang", newLang);
+    try {
+      localStorage.setItem("portfolio_lang", newLang);
+    } catch {
+      /* storage blocked */
+    }
     document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000; SameSite=Lax`;
     document.documentElement.lang = newLang;
     document.documentElement.dir = newLang === "ar" ? "rtl" : "ltr";

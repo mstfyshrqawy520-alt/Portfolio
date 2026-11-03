@@ -37,7 +37,7 @@ export interface DriveVideoItem {
   aspectRatio: "9:16" | "16:9" | "unknown";
   width?: number;
   height?: number;
-  durationMillis?: number;
+  durationMillis?: number | null;
   formattedDuration: string;
   isProcessing: boolean;
   createdTime: string;

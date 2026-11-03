@@ -1,6 +1,6 @@
 # Cinematic Video Editor Portfolio & Headless Google Drive CMS
 
-A production-grade, award-level personal portfolio and CV website built for high-end video editors, commercial directors, and motion designers. 
+A production-grade, award-level personal portfolio and CV website built for a professional video editor & motion designer. 
 
 Powered by **Google Drive as a zero-maintenance Headless CMS**: drop a video into your Google Drive folder, and the site automatically displays it within ~5 minutes via Next.js ISR (or instantly on demand)—with zero code editing, git pushes, or redeployments.
 
@@ -20,12 +20,14 @@ Powered by **Google Drive as a zero-maintenance Headless CMS**: drop a video int
 - **Click-to-Load Video Playback Facade**:
   - Zero iframes loaded on page load, guaranteeing Lighthouse mobile performance scores >= 95.
   - Lightbox modal with full keyboard controls (`Esc`, `ArrowLeft`, `ArrowRight`), prev/next navigation, deep linking (`?v=ID`), and one-click share link copying with toast notifications.
-- **Cinematic Bespoke Aesthetics**:
-  - Deep obsidian dark mode by default (`#08090d`) with subtle ambient glows and glassmorphism.
-  - Light mode toggle with smooth theme transition.
-  - Arabic (RTL) default with seamless English (LTR) toggle, persisted across visits.
-  - Curated typography using `next/font`: **Cairo** for Arabic and **Space Grotesk** for Latin.
-  - Respects `prefers-reduced-motion`.
+- **Cinematic editorial design**:
+  - Ink-black stage, bone-white type and a single "REC" signal colour (`#ff4b2b`); film-grain overlay, timecode and viewfinder motifs.
+  - Typography: **Thmanyah Serif Display / Sans** (Arabic), **Instrument Serif**, **Space Grotesk** and **JetBrains Mono** (Latin).
+  - Sections: Hero (live monitor of featured cuts) → Showreel → Selected Work (filterable, asymmetric masonry with a lead film) → Services → About → Toolkit → Experience & brands → Contact.
+  - Custom showreel player (`components/CinemaPlayer.tsx`): play/pause, scrub, time, mute/volume, fullscreen, keyboard shortcuts (Space/K, ←/→, M, F), lazy source, buffering & error states.
+  - Arabic (RTL) default with English (LTR) toggle (also `?lang=en`), persisted across visits.
+  - Respects `prefers-reduced-motion` (parallax and reveals collapse to fades).
+- **Showreel**: set `showreel.src` in `content/site.config.ts` to a direct MP4/WebM (e.g. `/showreel.mp4` in `public/`, or a CDN URL) to enable the custom player, or `showreel.driveFileId` for a Drive-hosted reel. Until then the slot plays featured projects and is labelled "Featured cut — full showreel coming soon".
 - **Sync Admin Dashboard (`/admin`)**:
   - Protected with `ADMIN_PASSWORD` via secure `httpOnly` session cookies.
   - IP-based sliding window rate limiting.
@@ -94,36 +96,39 @@ For click-by-click instructions on obtaining the Google Drive API key and settin
 │   │   ├── admin/              # Admin Login & Logout handlers
 │   │   ├── health/route.ts     # Health & sync status JSON endpoint
 │   │   └── revalidate/route.ts # On-demand ISR revalidation webhook
-│   ├── globals.css             # Glassmorphism, ambient glow, RTL tokens
-│   ├── layout.tsx              # SEO, Cairo/Space fonts, JSON-LD schema
-│   ├── opengraph-image.tsx     # Dynamic social card generation
+│   ├── globals.css             # Design tokens, grain, scrubber, marquee
+│   ├── layout.tsx              # SEO, fonts, JSON-LD schema
+│   ├── opengraph-image.png     # Social card built from real project frames
 │   ├── page.tsx                # ISR 300s Server Component
 │   ├── robots.ts & sitemap.ts  # Dynamic SEO crawlers
 ├── components/
-│   ├── Header.tsx              # Sticky nav, scroll-spy, language/theme toggle
-│   ├── Hero.tsx                # Headline, CTAs, profile card, showreel strip
-│   ├── About.tsx               # Bio & infinite tools marquee
-│   ├── Experience.tsx          # CV-style chronological timeline
-│   ├── WorkSection.tsx         # Category pills, URL query sync, bento grid
-│   ├── VideoCard.tsx           # Click-to-load facade (zero initial iframes)
-│   ├── VideoLightbox.tsx       # Modal player, YouTube fallback, deep link share
-│   ├── Services.tsx            # Service cards with direct WhatsApp triggers
-│   ├── Contact.tsx             # WhatsApp & mailto deep links
-│   ├── Footer.tsx              # Brand, socials, back-to-top, sync entry
+│   ├── Header.tsx              # Sticky nav, scroll-spy, language toggle, mobile menu
+│   ├── Hero.tsx                # Headline, CTAs, monitor of featured cuts, live stats
+│   ├── Showreel.tsx            # Showreel stage (custom player or featured cuts)
+│   ├── CinemaPlayer.tsx        # Custom HTML5 video player
+│   ├── DriveEmbed.tsx          # Drive/YouTube/Vimeo iframe with loading & fallback
+│   ├── WorkSection.tsx         # Filters, lead film, masonry project grid
+│   ├── VideoLightbox.tsx       # Modal player, details, prev/next, deep link share
+│   ├── Services.tsx            # Editorial service list with frames from real work
+│   ├── About.tsx               # Bio, philosophy, approach, facts
+│   ├── Toolkit.tsx             # Software confirmed by the CV
+│   ├── Experience.tsx          # Background + brands appearing in the work
+│   ├── Contact.tsx             # WhatsApp, email, socials
+│   ├── Reveal.tsx / Timecode.tsx # Motion primitives
 │   └── admin/                  # Dashboard & Login client components
 ├── content/
 │   ├── site.config.ts          # Single source of truth for profile & tools
 │   ├── ar.ts                   # Egyptian Arabic localization dictionary
 │   └── en.ts                   # English localization dictionary
 ├── context/
-│   ├── LanguageContext.tsx     # AR/EN switcher with cookie persistence
-│   └── ThemeContext.tsx        # Dark/Light theme manager
+│   └── LanguageContext.tsx     # AR/EN switcher with cookie persistence
 ├── data/
 │   └── sample.json             # Rich fallback dataset for offline/mock mode
 ├── lib/
 │   ├── drive.ts                # Server Drive API v3 mapper & fallback cache
 │   ├── admin-auth.ts           # Admin authentication & IP rate limiting
-│   └── theme.ts                # Cinematic color palette tokens
+│   ├── portfolio.ts            # Category labels, brand detection, helpers
+│   └── usePosterOrder.ts       # Prefers well-framed posters for large stages
 ├── tests/
 │   ├── drive-mapper.test.ts    # Vitest unit tests for title/order/aspect logic
 │   └── revalidation.test.ts    # Unit tests for cache invalidation & mock mode

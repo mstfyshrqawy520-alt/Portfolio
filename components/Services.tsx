@@ -1,88 +1,102 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import type { DriveVideoItem } from "@/types/drive";
 import { useLanguage } from "@/context/LanguageContext";
-import { siteConfig } from "@/content/site.config";
-import { Film, Tv, Building2, Sparkles, MessageCircle, ArrowUpRight } from "lucide-react";
+import { pad, posterFor } from "@/lib/portfolio";
+import { Reveal, SectionHeading } from "./Reveal";
 
-export default function Services() {
-  const { lang, t } = useLanguage();
+export default function Services({ videos, onFilter }: { videos: DriveVideoItem[]; onFilter?: (slug: string) => void }) {
+  const { t } = useLanguage();
+  const reduce = useReducedMotion();
+  const [hover, setHover] = useState<number | null>(null);
 
-  const getServiceIcon = (iconName: string) => {
-    switch (iconName) {
-      case "Film":
-        return <Film className="w-6 h-6 text-amber-400" />;
-      case "Tv":
-        return <Tv className="w-6 h-6 text-cyan-400" />;
-      case "Building2":
-        return <Building2 className="w-6 h-6 text-emerald-400" />;
-      case "Sparkles":
-        return <Sparkles className="w-6 h-6 text-purple-400" />;
-      default:
-        return <Film className="w-6 h-6 text-amber-400" />;
-    }
-  };
-
-  const createServiceWhatsappLink = (serviceTitle: string) => {
-    const text =
-      lang === "ar"
-        ? `مرحباً عبدالمجيد، أود الاستفسار عن خدمة: ${serviceTitle}`
-        : `Hi Abdelmagid, I am interested in inquiring about: ${serviceTitle}`;
-    return `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(text)}`;
-  };
+  // One real frame per service, taken from that category's work.
+  const frames = useMemo(
+    () =>
+      t.services.items.map((s) => {
+        if (!s.slug) return null;
+        const pool = videos.filter((v) => v.categorySlug === s.slug);
+        return pool.find((v) => v.isFeatured) ?? pool[0] ?? null;
+      }),
+    [t.services.items, videos]
+  );
 
   return (
-    <section id="services" className="py-24 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <div className="flex flex-col items-center text-center gap-3 mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold glass-panel text-amber-400 border border-amber-500/20">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{t.services.title}</span>
-          </div>
+    <section id="services" aria-labelledby="services-title" className="relative py-24 md:py-36">
+      <div className="container-x">
+        <SectionHeading id="services-title" kicker={t.services.kicker} title={t.services.title} />
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            {t.services.subtitle}
-          </h2>
-          <div className="w-16 h-1 bg-gradient-to-r from-amber-500 to-amber-300 rounded-full" />
-        </div>
-
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {t.services.items.map((srv, idx) => (
-            <div
-              key={idx}
-              className="glass-panel p-6 rounded-2xl border border-white/10 hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 shadow-lg shadow-black/20"
-            >
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  {getServiceIcon(srv.icon)}
-                </div>
-
-                <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                  {srv.title}
-                </h3>
-
-                <p className="text-xs sm:text-sm text-slate-300/80 leading-relaxed">
-                  {srv.description}
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-white/10">
-                <a
-                  href={createServiceWhatsappLink(srv.title)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 rounded-xl text-xs font-bold bg-white/5 hover:bg-amber-500 text-slate-200 hover:text-black border border-white/10 flex items-center justify-center gap-2 transition-all"
+        <ol className="mt-14 border-t hairline md:mt-20" onMouseLeave={() => setHover(null)}>
+          {t.services.items.map((s, i) => {
+            const frame = frames[i];
+            const count = s.slug ? videos.filter((v) => v.categorySlug === s.slug).length : 0;
+            return (
+                <motion.li
+                  key={s.title}
+                  initial={{ opacity: 0, y: reduce ? 0 : 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+                  transition={{ duration: 0.8, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                  className="group relative grid gap-4 border-b hairline py-8 md:grid-cols-12 md:items-center md:gap-8 md:py-10"
+                  onMouseEnter={() => setHover(i)}
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>{t.services.requestBtn}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <span className="font-mono text-xs text-smoke md:col-span-1" dir="ltr">
+                    {pad(i + 1)}
+                  </span>
+                  <h3 className="font-display text-3xl leading-tight text-bone transition-colors duration-500 group-hover:text-rec md:col-span-5 md:text-5xl">
+                    {s.title}
+                  </h3>
+                  <div className="md:col-span-4">
+                    <p className="text-sm leading-relaxed text-ash md:text-base">{s.description}</p>
+                    <ul className="mt-4 flex flex-wrap gap-2">
+                      {s.tags.map((tag) => (
+                        <li key={tag} className="rounded-full border border-line px-3 py-1 text-xs text-ash">
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 md:col-span-2 md:justify-end">
+                    {s.slug && count > 0 && onFilter ? (
+                      <button
+                        type="button"
+                        onClick={() => onFilter(s.slug!)}
+                        className="inline-flex items-center gap-2 text-sm text-bone underline-offset-8 hover:text-rec hover:underline"
+                      >
+                        <span className="font-mono text-xs text-smoke" dir="ltr">{pad(count)}</span>
+                        {t.nav.work}
+                        <ArrowUpRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+
+                  {/* Hover frame from real work (desktop only) */}
+                  {frame && (
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute top-1/2 z-10 hidden w-56 -translate-y-1/2 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] lg:block ltr:left-[38%] rtl:right-[38%] ${
+                        hover === i ? "scale-100 opacity-100" : "scale-90 opacity-0"
+                      } ${frame.orientation === "vertical" ? "aspect-[3/4]" : "aspect-video"}`}
+                    >
+                      <img src={posterFor(frame)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    </span>
+                  )}
+                </motion.li>
+            );
+          })}
+        </ol>
+
+        <Reveal className="mt-12 flex justify-center md:justify-end">
+          <a href="#contact" className="inline-flex h-12 items-center gap-3 rounded-full bg-bone px-6 text-sm font-medium text-ink transition-colors hover:bg-rec">
+            {t.services.cta}
+            <ArrowUpRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden="true" />
+          </a>
+        </Reveal>
       </div>
     </section>
   );

@@ -1,192 +1,221 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { CategoryGroup, DriveVideoItem } from "@/types/drive";
-import VideoCard from "./VideoCard";
+import React, { useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Play, Plus } from "lucide-react";
+import type { CategoryGroup, DriveVideoItem } from "@/types/drive";
 import { useLanguage } from "@/context/LanguageContext";
-import { Film, Filter, Inbox } from "lucide-react";
+import { categoryBlurb, categoryLabel, hasRealDuration, pad, posterFor } from "@/lib/portfolio";
+import { SectionHeading } from "./Reveal";
+import { usePosterOrder } from "@/lib/usePosterOrder";
+
+const PAGE = 12;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 interface WorkSectionProps {
   categories: CategoryGroup[];
   videos: DriveVideoItem[];
-  onSelectVideo: (video: DriveVideoItem) => void;
+  onSelect: (video: DriveVideoItem, list: DriveVideoItem[]) => void;
+  initialFilter?: string;
 }
 
-export default function WorkSection({
-  categories,
-  videos,
-  onSelectVideo,
-}: WorkSectionProps) {
+export default function WorkSection({ categories, videos, onSelect, initialFilter = "all" }: WorkSectionProps) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const reduce = useReducedMotion();
+  const [filter, setFilter] = useState<string>(initialFilter);
+  const [visible, setVisible] = useState(PAGE);
 
-  // Selected category slug ("all" or specific slug)
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const cats = useMemo(
+    () => [...categories].filter((c) => videos.some((v) => v.categorySlug === c.slug)).sort((a, b) => a.order - b.order),
+    [categories, videos]
+  );
 
-  // Number of visible videos (starts at 8, loads in batches of 8)
-  const INITIAL_COUNT = 8;
-  const BATCH_SIZE = 8;
-  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_COUNT);
+  const filtered = useMemo(() => (filter === "all" ? videos : videos.filter((v) => v.categorySlug === filter)), [filter, videos]);
 
-  // Read ?cat= from URL on load
-  useEffect(() => {
-    const catParam = searchParams.get("cat");
-    if (catParam) {
-      // Verify if slug exists in categories
-      const exists = categories.some((c) => c.slug === catParam);
-      if (exists) {
-        setSelectedCategory(catParam);
-        setVisibleCount(INITIAL_COUNT);
-      }
-    }
-  }, [searchParams, categories]);
+  // Lead piece: the first featured landscape film in the current view.
+  const leadCandidates = useMemo(() => {
+    const wide = filtered.filter((v) => v.orientation === "horizontal");
+    const feat = wide.filter((v) => v.isFeatured);
+    return (feat.length ? feat : wide).slice(0, 6);
+  }, [filtered]);
+  const lead = usePosterOrder(leadCandidates)[0] ?? null;
+  const rest = useMemo(() => filtered.filter((v) => v.id !== lead?.id), [filtered, lead]);
+  const shown = rest.slice(0, Math.max(0, visible - (lead ? 1 : 0)));
+  const shownCount = shown.length + (lead ? 1 : 0);
 
-  // Handle category change and sync with URL
-  const handleCategoryChange = (slug: string) => {
-    setSelectedCategory(slug);
-    setVisibleCount(INITIAL_COUNT);
-    const params = new URLSearchParams(window.location.search);
-    if (slug === "all") {
-      params.delete("cat");
-    } else {
-      params.set("cat", slug);
-    }
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}#work`;
-    window.history.replaceState(null, "", newUrl);
+  const choose = (slug: string) => {
+    setFilter(slug);
+    setVisible(PAGE);
   };
 
-  // Filter videos based on selected category
-  const filteredVideos =
-    selectedCategory === "all"
-      ? videos
-      : videos.filter((v) => v.categorySlug === selectedCategory);
-
-  const displayedVideos = filteredVideos.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredVideos.length;
+  const indexOf = (v: DriveVideoItem) => videos.indexOf(v) + 1;
 
   return (
-    <section id="work" className="py-24 relative overflow-hidden bg-slate-950/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <div className="flex flex-col items-center text-center gap-3 mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold glass-panel text-amber-400 border border-amber-500/20">
-            <Film className="w-3.5 h-3.5" />
-            <span>{t.work.title}</span>
+    <section id="work" aria-labelledby="work-title" className="relative py-24 md:py-36">
+      <div className="container-x">
+        <SectionHeading
+          id="work-title"
+          kicker={t.work.kicker}
+          title={t.work.title}
+          lead={t.work.lead}
+          aside={
+            <p className="font-mono text-xs text-smoke" dir="ltr" aria-live="polite">
+              {t.work.showing.replace("{count}", pad(shownCount)).replace("{total}", pad(filtered.length))}
+            </p>
+          }
+        />
+
+        {/* Filters */}
+        <div className="sticky top-16 z-30 -mx-4 mt-12 bg-ink/85 px-4 py-3 backdrop-blur-md md:top-20 md:mx-0 md:px-0">
+          <div role="group" aria-label={t.work.filterLabel} className="no-scrollbar flex gap-2 overflow-x-auto">
+            {[{ slug: "all", label: t.work.all, count: videos.length }, ...cats.map((c) => ({ slug: c.slug, label: categoryLabel(c.slug, c.name, t.categories), count: videos.filter((v) => v.categorySlug === c.slug).length }))].map(
+              (c) => {
+                const on = filter === c.slug;
+                return (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    onClick={() => choose(c.slug)}
+                    aria-pressed={on}
+                    className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-300 ${
+                      on ? "border-bone bg-bone text-ink" : "border-line text-ash hover:border-bone/40 hover:text-bone"
+                    }`}
+                  >
+                    {c.label}
+                    <sup className={`font-mono text-[10px] ${on ? "text-ink/60" : "text-smoke"}`}>{c.count}</sup>
+                  </button>
+                );
+              }
+            )}
           </div>
-
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            {t.work.subtitle}
-          </h2>
-
-          <div className="w-20 h-1 bg-gradient-to-r from-amber-500 to-amber-300 rounded-full my-1" />
         </div>
 
-        {/* Category Pills Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-12">
-          {/* "All" Category Pill */}
-          <button
-            onClick={() => handleCategoryChange("all")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
-              selectedCategory === "all"
-                ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30 scale-105"
-                : "glass-panel text-slate-200 hover:text-white hover:bg-white/10 border border-white/10"
-            }`}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={filter}
+            initial={{ opacity: 0, y: reduce ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: reduce ? 0 : -10 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="mt-8"
           >
-            <span>{t.work.allCategory}</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                selectedCategory === "all"
-                  ? "bg-black/25 text-black"
-                  : "bg-white/10 text-slate-300"
-              }`}
-            >
-              {videos.length}
-            </span>
-          </button>
+            {filter !== "all" && categoryBlurb(filter, t.categories) && (
+              <p className="mb-8 max-w-2xl border-s-2 border-rec ps-4 text-sm leading-relaxed text-ash md:text-base">{categoryBlurb(filter, t.categories)}</p>
+            )}
 
-          {/* Sub-Folder Category Pills */}
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat.slug;
-            return (
-              <button
-                key={cat.slug}
-                onClick={() => handleCategoryChange(cat.slug)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30 scale-105"
-                    : "glass-panel text-slate-200 hover:text-white hover:bg-white/10 border border-white/10"
-                }`}
-              >
-                <span>{cat.name}</span>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                    isSelected
-                      ? "bg-black/25 text-black"
-                      : "bg-white/10 text-slate-300"
-                  }`}
-                >
-                  {cat.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+            {filtered.length === 0 ? (
+              <p className="py-24 text-center text-ash">{t.work.empty}</p>
+            ) : (
+              <>
+                {lead && <ProjectCard video={lead} index={indexOf(lead)} variant="lead" onOpen={() => onSelect(lead, filtered)} />}
 
-        {/* Videos Grid */}
-        {displayedVideos.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-auto">
-              {displayedVideos.map((video) => (
-                <VideoCard
-                  key={video.id}
-                  video={video}
-                  onSelect={onSelectVideo}
-                />
-              ))}
-            </div>
+                <ul className="mt-4 columns-1 gap-4 sm:columns-2 lg:columns-3 [&>li]:mb-4">
+                  {shown.map((v, i) => (
+                    <motion.li
+                      key={v.id}
+                      className="break-inside-avoid"
+                      initial={{ opacity: 0, y: reduce ? 0 : 24 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "0px 0px -5% 0px" }}
+                      transition={{ duration: 0.7, delay: (i % 3) * 0.06, ease: EASE }}
+                    >
+                      <ProjectCard video={v} index={indexOf(v)} onOpen={() => onSelect(v, filtered)} />
+                    </motion.li>
+                  ))}
+                </ul>
 
-            {/* Load More Button or Finished State */}
-            {hasMore ? (
-              <div className="flex flex-col items-center justify-center gap-3 mt-14">
-                <button
-                  onClick={() => setVisibleCount((prev) => prev + BATCH_SIZE)}
-                  className="px-8 py-3.5 rounded-full text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black flex items-center gap-2.5 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                >
-                  <span>{t.work.loadMore}</span>
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-black/20 text-black font-extrabold">
-                    +{Math.min(BATCH_SIZE, filteredVideos.length - visibleCount)}
-                  </span>
-                </button>
-                <span className="text-xs text-slate-400">
-                  {t.work.showingCount
-                    ?.replace("{count}", String(displayedVideos.length))
-                    .replace("{total}", String(filteredVideos.length))}
-                </span>
-              </div>
-            ) : filteredVideos.length > INITIAL_COUNT ? (
-              <div className="text-center mt-12 text-xs font-medium text-slate-400">
-                {t.work.allShown?.replace("{total}", String(filteredVideos.length))}
-              </div>
-            ) : null}
-          </>
-        ) : (
-          /* Empty State */
-          <div className="glass-panel max-w-md mx-auto p-10 rounded-2xl border border-white/10 text-center flex flex-col items-center gap-3">
-            <Inbox className="w-12 h-12 text-slate-500 mb-1" />
-            <h3 className="text-base font-bold text-white">
-              {t.work.noVideosFound}
-            </h3>
-            <button
-              onClick={() => handleCategoryChange("all")}
-              className="mt-2 px-4 py-2 rounded-full text-xs font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors"
-            >
-              {t.work.allCategory}
-            </button>
-          </div>
-        )}
+                {shownCount < filtered.length && (
+                  <div className="mt-12 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setVisible((n) => n + PAGE)}
+                      className="group inline-flex h-12 items-center gap-3 rounded-full border border-bone/25 px-6 text-sm text-bone transition-colors hover:border-bone hover:bg-bone hover:text-ink"
+                    >
+                      <Plus className="h-4 w-4 transition-transform duration-500 group-hover:rotate-90" aria-hidden="true" />
+                      {t.work.loadMore}
+                      <span className="font-mono text-xs opacity-60" dir="ltr">
+                        +{Math.min(PAGE, filtered.length - shownCount)}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
+  );
+}
+
+function ProjectCard({ video, index, onOpen, variant = "default" }: { video: DriveVideoItem; index: number; onOpen: () => void; variant?: "default" | "lead" }) {
+  const { t } = useLanguage();
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const vertical = video.orientation === "vertical";
+  const isLead = variant === "lead";
+  const aspect = isLead ? "aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]" : vertical ? "aspect-[4/5]" : "aspect-video";
+  const label = categoryLabel(video.categorySlug, video.category, t.categories);
+
+  return (
+    <button type="button" onClick={onOpen} className="group block w-full text-start" aria-label={`${t.work.watch}: ${video.title} — ${label}`}>
+      <span className={`relative block overflow-hidden bg-char ${aspect}`}>
+        {!loaded && !failed && <span className="absolute inset-0 animate-pulse bg-graphite" aria-hidden="true" />}
+        {failed ? (
+          <span className="absolute inset-0 flex items-center justify-center p-6 text-center font-display text-2xl text-smoke">{video.title}</span>
+        ) : (
+          <img
+            src={posterFor(video)}
+            alt=""
+            loading={isLead ? "eager" : "lazy"}
+            decoding="async"
+            ref={(el) => {
+              // Image may finish loading before hydration attaches onLoad.
+              if (el?.complete && el.naturalWidth > 0 && !loaded) setLoaded(true);
+            }}
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+            className={`absolute inset-0 h-full w-full object-cover transition-[transform,opacity,filter] duration-[1.2s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05] group-focus-visible:scale-[1.05] ${
+              loaded ? "opacity-100" : "opacity-0"
+            } grayscale-[25%] group-hover:grayscale-0`}
+          />
+        )}
+        <span className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-100" aria-hidden="true" />
+
+        {/* Corner meta */}
+        <span className="absolute start-3 top-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-bone/80" dir="ltr">
+          {pad(index, 3)}
+        </span>
+        <span className="absolute end-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] text-bone/70">
+          {vertical ? "9:16" : "16:9"}
+          {hasRealDuration(video) && <span className="ms-2">{video.formattedDuration}</span>}
+        </span>
+
+        {/* Play cue */}
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex translate-y-3 scale-90 items-center gap-2 rounded-full bg-bone px-4 py-2 text-xs font-medium text-ink opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-focus-visible:opacity-100">
+            <Play className="h-3 w-3 fill-current" aria-hidden="true" />
+            {t.work.watch}
+          </span>
+        </span>
+
+        {isLead && (
+          <span className="absolute inset-x-0 bottom-0 p-5 md:p-10">
+            <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-rec md:text-xs">{label}</span>
+            <span className="mt-2 block max-w-3xl font-display text-3xl leading-tight text-bone md:text-6xl">{video.title}</span>
+          </span>
+        )}
+      </span>
+
+      {!isLead && (
+        <span className="mt-3 flex items-baseline justify-between gap-4">
+          <span className="min-w-0">
+            <span className="block truncate text-base text-bone transition-colors group-hover:text-rec">{video.title}</span>
+            <span className="mt-0.5 block text-xs text-smoke">{label}</span>
+          </span>
+          <span className="h-px w-6 shrink-0 bg-line transition-all duration-500 group-hover:w-10 group-hover:bg-rec" aria-hidden="true" />
+        </span>
+      )}
+    </button>
   );
 }

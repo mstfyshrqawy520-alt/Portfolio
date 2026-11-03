@@ -11,8 +11,8 @@ export default async function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#08090d] flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-400 rounded-full animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-ink">
+          <span className="rec-dot" aria-label="Loading" />
         </div>
       }
     >
