@@ -59,6 +59,7 @@ export const en = {
     vertical: "Vertical 9:16",
     horizontal: "Horizontal 16:9",
     watch: "Watch",
+    preview: "Preview",
     project: "Project",
     lightbox: {
       close: "Close",

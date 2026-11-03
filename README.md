@@ -27,6 +27,7 @@ Powered by **Google Drive as a zero-maintenance Headless CMS**: drop a video int
   - Custom showreel player (`components/CinemaPlayer.tsx`): play/pause, scrub, time, mute/volume, fullscreen, keyboard shortcuts (Space/K, ←/→, M, F), lazy source, buffering & error states.
   - Arabic (RTL) default with English (LTR) toggle (also `?lang=en`), persisted across visits.
   - Respects `prefers-reduced-motion` (parallax and reveals collapse to fades).
+- **Hover previews**: short muted clips in `public/previews/<driveId>.mp4` play when a project card is hovered (or scrolled into view on phones) and in the hero monitor. Generate or refresh them with `pip install imageio-ffmpeg` then `python scripts/make_previews.py` (existing clips are skipped; Google Drive's daily download quota may require re-running the next day). Projects without a clip simply show their poster. Previews are disabled for reduced-motion and data-saver users.
 - **Showreel**: set `showreel.src` in `content/site.config.ts` to a direct MP4/WebM (e.g. `/showreel.mp4` in `public/`, or a CDN URL) to enable the custom player, or `showreel.driveFileId` for a Drive-hosted reel. Until then the slot plays featured projects and is labelled "Featured cut — full showreel coming soon".
 - **Sync Admin Dashboard (`/admin`)**:
   - Protected with `ADMIN_PASSWORD` via secure `httpOnly` session cookies.

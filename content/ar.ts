@@ -63,6 +63,7 @@ export const ar: Dict = {
     vertical: "رأسي 9:16",
     horizontal: "أفقي 16:9",
     watch: "شاهد",
+    preview: "معاينة",
     project: "مشروع",
     lightbox: {
       close: "إغلاق",

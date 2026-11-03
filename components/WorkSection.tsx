@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import React, { useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Play, Plus } from "lucide-react";
 import type { CategoryGroup, DriveVideoItem } from "@/types/drive";
 import { useLanguage } from "@/context/LanguageContext";
 import { categoryBlurb, categoryLabel, hasRealDuration, pad, posterFor } from "@/lib/portfolio";
 import { SectionHeading } from "./Reveal";
 import { usePosterOrder } from "@/lib/usePosterOrder";
+import { previewFor } from "@/lib/previews";
+import HoverPreview from "./HoverPreview";
 
 const PAGE = 12;
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -90,12 +92,10 @@ export default function WorkSection({ categories, videos, onSelect, initialFilte
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
+        <motion.div
             key={filter}
-            initial={{ opacity: 0, y: reduce ? 0 : 20 }}
+            initial={filter === initialFilter ? false : { opacity: 0, y: reduce ? 0 : 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reduce ? 0 : -10 }}
             transition={{ duration: 0.5, ease: EASE }}
             className="mt-8"
           >
@@ -142,7 +142,6 @@ export default function WorkSection({ categories, videos, onSelect, initialFilte
               </>
             )}
           </motion.div>
-        </AnimatePresence>
       </div>
     </section>
   );
@@ -156,9 +155,11 @@ function ProjectCard({ video, index, onOpen, variant = "default" }: { video: Dri
   const isLead = variant === "lead";
   const aspect = isLead ? "aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]" : vertical ? "aspect-[4/5]" : "aspect-video";
   const label = categoryLabel(video.categorySlug, video.category, t.categories);
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const preview = previewFor(video.id);
 
   return (
-    <button type="button" onClick={onOpen} className="group block w-full text-start" aria-label={`${t.work.watch}: ${video.title} — ${label}`}>
+    <button ref={cardRef} type="button" onClick={onOpen} className="group block w-full text-start" aria-label={`${t.work.watch}: ${video.title} — ${label}`}>
       <span className={`relative block overflow-hidden bg-char ${aspect}`}>
         {!loaded && !failed && <span className="absolute inset-0 animate-pulse bg-graphite" aria-hidden="true" />}
         {failed ? (
@@ -180,6 +181,7 @@ function ProjectCard({ video, index, onOpen, variant = "default" }: { video: Dri
             } grayscale-[25%] group-hover:grayscale-0`}
           />
         )}
+        {preview && <HoverPreview src={preview} targetRef={cardRef} label={t.work.preview} />}
         <span className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-100" aria-hidden="true" />
 
         {/* Corner meta */}

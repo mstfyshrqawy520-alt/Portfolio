@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowDownRight, Play } from "lucide-react";
 import type { DriveVideoItem } from "@/types/drive";
@@ -8,6 +8,9 @@ import { useLanguage } from "@/context/LanguageContext";
 import { MaskedLine } from "./Reveal";
 import Timecode from "./Timecode";
 import { usePosterOrder } from "@/lib/usePosterOrder";
+import { previewFor, previewsAllowed } from "@/lib/previews";
+
+const noopSubscribe = () => () => {};
 import { categoryLabel, posterFor } from "@/lib/portfolio";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -36,14 +39,18 @@ export default function Hero({ featured, totalProjects, totalCategories, formats
   }, [featured]);
   const reel = usePosterOrder(candidates);
 
+  const canPlayClips = useSyncExternalStore(noopSubscribe, previewsAllowed, () => false);
   const [frame, setFrame] = useState(0);
+  const current = reel[frame];
+  const clip = current && canPlayClips ? previewFor(current.id) : null;
+
+  // Hold each shot a little longer when its clip is playing.
   useEffect(() => {
     if (reduce || reel.length < 2) return;
-    const id = window.setInterval(() => setFrame((f) => (f + 1) % reel.length), 3800);
-    return () => window.clearInterval(id);
-  }, [reduce, reel.length]);
+    const id = window.setTimeout(() => setFrame((f) => (f + 1) % reel.length), clip ? 6000 : 3800);
+    return () => window.clearTimeout(id);
+  }, [reduce, reel.length, frame, clip]);
 
-  const current = reel[frame];
 
   return (
     <section ref={ref} id="top" aria-labelledby="hero-title" className="relative flex min-h-[100svh] flex-col overflow-hidden pt-24 md:pt-28">
@@ -135,6 +142,22 @@ export default function Hero({ featured, totalProjects, totalCategories, formats
                     className="ken-burns absolute inset-0 h-full w-full object-cover"
                     fetchPriority={frame === 0 ? "high" : "auto"}
                     decoding="async"
+                  />
+                )}
+                {current && clip && (
+                  <motion.video
+                    key={`clip-${current.id}`}
+                    src={clip}
+                    muted
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    aria-hidden="true"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.2, delay: 0.3 }}
+                    className="absolute inset-0 h-full w-full object-cover"
                   />
                 )}
               </AnimatePresence>
