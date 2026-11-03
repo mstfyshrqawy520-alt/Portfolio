@@ -19,7 +19,7 @@ export const en = {
     titleA: "Cuts that",
     titleB: "hold the eye.",
     intro:
-      "I'm Abdelmgeed Owais. I edit promos, real-estate films, short-form reels and Google Earth map animations — shaping raw footage into stories with rhythm, clarity and a clean visual finish.",
+      "I'm Abdelmgeed Owais. I edit promos, real-estate videos, short-form reels and Google Earth map animations — shaping raw footage into stories with rhythm, clarity and a clean visual finish.",
     ctaReel: "Watch showreel",
     ctaWork: "Explore my work",
     ctaContact: "Contact me",
@@ -32,7 +32,7 @@ export const en = {
   showreel: {
     kicker: "01 — Showreel",
     title: "The work, in motion.",
-    lead: "A selection of cuts from recent projects — promos, property films and social-first edits.",
+    lead: "A selection of cuts from recent projects — promos, property videos and social-first edits.",
     featuredCut: "Featured cut",
     comingSoon: "Full showreel coming soon",
     play: "Play",
@@ -83,7 +83,7 @@ export const en = {
       blurb: "Promotional and advertising edits for brands, products and real-estate developers — built around a clear message and a strong hook.",
     },
     realstate: {
-      label: "Real Estate Films",
+      label: "Real Estate Videos",
       short: "Real Estate",
       blurb: "Property tours, project launches and on-site coverage for real-estate developers — aerials, interiors and presenter-led pieces.",
     },
@@ -115,8 +115,8 @@ export const en = {
       },
       {
         slug: "realstate",
-        title: "Real Estate & Property Films",
-        description: "Tours, project launches and construction updates. Aerials, interiors and presenter footage shaped into films that sell a place.",
+        title: "Real Estate & Property Videos",
+        description: "Tours, project launches and construction updates. Aerials, interiors and presenter footage shaped into videos that sell a place.",
         tags: ["Property tours", "Launches", "Site coverage"],
       },
       {
@@ -155,7 +155,7 @@ export const en = {
       { title: "Delivery", text: "Export clean masters in the formats each platform needs — 16:9 and 9:16." },
     ],
     focusLabel: "Specialisation",
-    focus: ["Video editing", "Motion graphics", "Real-estate films", "Short-form reels", "Map animation", "Graphic design"],
+    focus: ["Video editing", "Motion graphics", "Real-estate videos", "Short-form reels", "Map animation", "Graphic design"],
     factsLabel: "At a glance",
     facts: [
       { k: "Based in", v: "Menouf, Egypt — working remotely" },
@@ -189,7 +189,7 @@ export const en = {
         period: "Portfolio",
         role: "Video Editing & Post-production",
         place: "Real-estate developers, brands & creators",
-        text: "{count} edited projects across promos, property films, reels, social content and map animation — all viewable on this page.",
+        text: "{count} edited projects across promos, property videos, reels, social content and map animation — all viewable on this page.",
       },
       {
         period: "Skillset",

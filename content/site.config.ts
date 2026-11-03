@@ -59,9 +59,9 @@ export const siteConfig: SiteConfig = {
   roleAr: "مونتير فيديو ومصمم موشن جرافيك",
   roleEn: "Video Editor & Motion Designer",
   taglineAr:
-    "مونتاج ريلز وبروموهات وأفلام عقارية وموشن جرافيك — بإيقاع محسوب وتفاصيل بصرية مصنوعة بعناية.",
+    "مونتاج ريلز وبروموهات وفيديوهات عقارية وموشن جرافيك — بإيقاع محسوب وتفاصيل بصرية مصنوعة بعناية.",
   taglineEn:
-    "Editing reels, promos, real-estate films and motion graphics — with deliberate pacing and carefully crafted visual detail.",
+    "Editing reels, promos, real-estate videos and motion graphics — with deliberate pacing and carefully crafted visual detail.",
   locationAr: "منوف، المنوفية — مصر",
   locationEn: "Menouf, Minufia — Egypt",
   email: "abdoowaiss138@gmail.com",

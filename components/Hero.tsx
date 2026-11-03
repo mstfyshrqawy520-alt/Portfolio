@@ -61,8 +61,12 @@ export default function Hero({ featured, totalProjects, totalCategories, formats
           </motion.p>
 
           <h1 id="hero-title" className="font-display text-[clamp(3.4rem,9.5vw,8.75rem)] leading-[0.92] tracking-[-0.03em] text-bone">
-            <MaskedLine text={t.hero.titleA} delay={0.15} className="block" />
-            <MaskedLine text={t.hero.titleB} delay={0.35} className={`block ${lang === "en" ? "italic" : ""} text-bone/90`} />
+            <span className="block">
+              <MaskedLine text={t.hero.titleA} delay={0.15} />
+            </span>
+            <span className="block">
+              <MaskedLine text={t.hero.titleB} delay={0.35} className={`${lang === "en" ? "italic" : ""} text-bone/90`} />
+            </span>
           </h1>
 
           <motion.p
