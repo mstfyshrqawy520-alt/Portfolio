@@ -16,7 +16,7 @@ export const en = {
   },
   hero: {
     eyebrow: "Video Editor & Motion Designer — Egypt",
-    titleA: "Cuts that",
+    titleA: "Edits that",
     titleB: "hold the eye.",
     intro:
       "I'm Abdelmgeed Owais. I edit promos, real-estate videos, short-form reels and Google Earth map animations — shaping raw footage into stories with rhythm, clarity and a clean visual finish.",
